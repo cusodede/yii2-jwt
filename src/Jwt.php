@@ -9,8 +9,10 @@ use Lcobucci\JWT\Claim\Factory;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Parsing\Decoder;
 use Lcobucci\JWT\Parsing\Encoder;
+use Lcobucci\JWT\Signer\Key\InMemory;
 use Lcobucci\JWT\Token;
 use Lcobucci\JWT\ValidationData;
+use LogicException;
 use Yii;
 use yii\base\Component;
 
@@ -19,7 +21,7 @@ use yii\base\Component;
  * @see https://github.com/lcobucci/jwt
  *
  * @author Dmitriy Demin <sizemail@gmail.com> original package
- * @author Paweł Bizley Brzozowski <pawel@positive.codes> since 2.0 (fork)
+ * @author Paweł Bizley Brzozowski <pawel@positive.codes> since 2.0.0 (fork)
  */
 class Jwt extends Component
 {
@@ -58,23 +60,25 @@ class Jwt extends Component
 
     /**
      * Initializes parser.
+     * Since 2.1.0 argument $claimFactory is removed.
      * @param Decoder|null $decoder
-     * @param Factory|null $claimFactory
      * @return Parser
      */
-    public function getParser(?Decoder $decoder = null, ?Factory $claimFactory = null): Parser
+    public function getParser(?Decoder $decoder = null): Parser
     {
-        return new Parser($decoder, $claimFactory); // $claimFactory not used anymore in lcobucci/jwt 3.4
+        return new Parser($decoder);
     }
 
     /**
      * Initializes validation data wrapper.
+     * Since 2.1.0 argument $leeway is added.
      * @param int|null $currentTime UNIX timestamp or null for time()
+     * @param int|null $leeway
      * @return ValidationData
      */
-    public function getValidationData(?int $currentTime = null): ValidationData
+    public function getValidationData(?int $currentTime = null, ?int $leeway = 0): ValidationData
     {
-        return new ValidationData($currentTime);
+        return new ValidationData($currentTime, $leeway);
     }
 
     /**
@@ -156,34 +160,63 @@ class Jwt extends Component
         /* @var $signer \Lcobucci\JWT\Signer */
         $signer = Yii::createObject($this->signers[$alg]);
 
-        return $token->verify($signer, $this->prepareKey($this->key));
+        return $token->verify($signer, $this->prepareKeyObject($this->key));
     }
 
     /**
-     * Detects key file path and resolves Yii alias if given.
+     * Detects key file path and resolves Yii alias if given and returns key string.
      * @param string $key
      * @return string|null
-     * @throws \LogicException when file path does not exist or is not readable
-     * @since 2.0
+     * @throws LogicException when file path does not exist or is not readable
+     * @since 2.0.0
+     * @deprecated since 2.1.0, use prepareKeyObject() instead
      */
     public function prepareKey(string $key): ?string
     {
         $keyPath = null;
 
         if (strpos($key, '@') === 0) {
-            $keyPath = 'file://' . Yii::getAlias($key);
+            $keyPath = Yii::getAlias($key);
         } elseif (strpos($key, 'file://') === 0) {
             $keyPath = $key;
         }
 
         if ($keyPath !== null) {
             if (!file_exists($keyPath) || !is_readable($keyPath)) {
-                throw new \LogicException(sprintf('Key path "%s" does not exist or is not readable', $keyPath));
+                throw new LogicException(sprintf('Key path "%s" does not exist or is not readable', $keyPath));
             }
 
             return $keyPath;
         }
 
         return $key;
+    }
+
+    /**
+     * Detects key file path and resolves Yii alias if given and returns key object.
+     * @param string $key
+     * @return InMemory|null
+     * @throws LogicException when file path does not exist or is not readable
+     * @since 2.1.0
+     */
+    public function prepareKeyObject(string $key): ?InMemory
+    {
+        $keyPath = null;
+
+        if (strpos($key, '@') === 0) {
+            $keyPath = Yii::getAlias($key);
+        } elseif (strpos($key, 'file://') === 0) {
+            $keyPath = $key;
+        }
+
+        if ($keyPath !== null) {
+            if (!file_exists($keyPath) || !is_readable($keyPath)) {
+                throw new LogicException(sprintf('Key path "%s" does not exist or is not readable', $keyPath));
+            }
+
+            return InMemory::file($keyPath);
+        }
+
+        return $key ? InMemory::plainText($key) : null;
     }
 }

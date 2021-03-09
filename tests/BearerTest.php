@@ -6,6 +6,8 @@ namespace bizley\tests;
 
 use bizley\jwt\Jwt;
 use bizley\jwt\JwtHttpBearerAuth;
+use DateTimeImmutable;
+use Lcobucci\JWT\Signer\Hmac\Sha256;
 use PHPUnit\Framework\TestCase;
 use Yii;
 use yii\base\InvalidConfigException;
@@ -69,9 +71,9 @@ class BearerTest extends TestCase
     public function testHttpBearerAuthExpiredToken(): void
     {
         $token = Yii::$app->jwt->getBuilder()
-            ->setIssuedAt(time() - 100)
-            ->setExpiration(time() - 50)
-            ->getToken();
+            ->setIssuedAt((new DateTimeImmutable())->setTimestamp(time() - 100))
+            ->setExpiration((new DateTimeImmutable())->setTimestamp(time() - 50))
+            ->getToken(new Sha256(), Yii::$app->jwt->prepareKeyObject(Yii::$app->jwt->key));
 
         Yii::$app->request->headers->set('Authorization', "Bearer $token");
 
@@ -92,11 +94,10 @@ class BearerTest extends TestCase
     public function testHttpBearerAuth(): void
     {
         $token = Yii::$app->jwt->getBuilder()
-                    ->setIssuedAt(time())
-                    ->setExpiration(time() + 3600)
+                    ->setIssuedAt((new DateTimeImmutable())->setTimestamp(time()))
+                    ->setExpiration((new DateTimeImmutable())->setTimestamp(time() + 3600))
                     ->setSubject('test')
-                    ->sign(new \Lcobucci\JWT\Signer\Hmac\Sha256(), Yii::$app->jwt->key)
-                    ->getToken();
+                    ->getToken(new Sha256(), Yii::$app->jwt->prepareKeyObject(Yii::$app->jwt->key));
 
         UserIdentity::$token = (string) $token;
 
@@ -114,11 +115,10 @@ class BearerTest extends TestCase
     public function testHttpBearerAuthCustom(): void
     {
         $token = Yii::$app->jwt->getBuilder()
-            ->setIssuedAt(time())
-            ->setExpiration(time() + 3600)
+            ->setIssuedAt((new DateTimeImmutable())->setTimestamp(time()))
+            ->setExpiration((new DateTimeImmutable())->setTimestamp(time() + 3600))
             ->setSubject('test')
-            ->sign(new \Lcobucci\JWT\Signer\Hmac\Sha256(), Yii::$app->jwt->key)
-            ->getToken();
+            ->getToken(new Sha256(), Yii::$app->jwt->prepareKeyObject(Yii::$app->jwt->key));
 
         Yii::$app->request->headers->set('Authorization', "Bearer $token");
 

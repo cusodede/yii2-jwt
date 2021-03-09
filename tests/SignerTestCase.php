@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace bizley\tests;
 
 use bizley\jwt\Jwt;
-use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\Signer;
 use Lcobucci\JWT\Token;
 use PHPUnit\Framework\TestCase;
@@ -38,9 +37,7 @@ abstract class SignerTestCase extends TestCase
 
     abstract public function getSigner(): Signer;
 
-    abstract public function sign(Builder $builder): Builder;
-
-    abstract public function verify(Token $token): bool;
+    abstract public function getSigningKey(): string;
 
     /**
      * @return Token
@@ -48,14 +45,18 @@ abstract class SignerTestCase extends TestCase
      */
     public function createTokenWithSignature(): Token
     {
-        return $this->sign($this->getJwt()->getBuilder())->getToken();
+        return $this->getJwt()->getBuilder()->getToken(
+            $this->getSigner(),
+            $this->getJwt()->prepareKeyObject($this->getSigningKey())
+        );
     }
 
     /**
      * @throws InvalidConfigException
+     * @throws \yii\base\NotSupportedException
      */
     public function testValidateTokenWithSignature(): void
     {
-        self::assertTrue($this->verify($this->createTokenWithSignature()));
+        self::assertTrue($this->getJwt()->verifyToken($this->createTokenWithSignature()));
     }
 }
