@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace bizley\tests;
 
 use bizley\jwt\Jwt;
+use DateTimeImmutable;
+use Lcobucci\JWT\Signer\Hmac\Sha256;
 use Lcobucci\JWT\Token;
 use PHPUnit\Framework\TestCase;
 use yii\base\InvalidConfigException;
@@ -48,11 +50,11 @@ class TokenValidationTest extends TestCase
         return $this->getJwt()->getBuilder()
             ->setIssuer(static::$issuer)
             ->setAudience(static::$audience)
-            ->setId(static::$id, true)
-            ->setIssuedAt(time() + $issuedOffset)
-            ->setExpiration(time() + 3600)
+            ->setId(static::$id)
+            ->setIssuedAt((new DateTimeImmutable())->setTimestamp(time() + $issuedOffset))
+            ->setExpiration((new DateTimeImmutable())->setTimestamp(time() + 3600))
             ->set('uid', 1)
-            ->getToken();
+            ->getToken(new Sha256(), $this->getJwt()->prepareKeyObject($this->getJwt()->key));
     }
 
     /**

@@ -9,7 +9,9 @@ This extension provides the [JWT](https://github.com/lcobucci/jwt) integration f
 
 > This is fork of [sizeg/yii2-jwt](https://github.com/sizeg/yii2-jwt) package
 
-This package uses lcobucci/jwt v3. For v4 install `bizley/jwt:^3.0`.
+This package is compatible with lcobucci/jwt v3.3 or v3.4.
+- For v3.2 and older install `bizley/jwt:<2.1`.
+- For v4 install `bizley/jwt:^3.0`.
 
 ## Installation
 
@@ -17,11 +19,11 @@ Add the package to your `composer.json`:
 
     {
         "require": {
-            "bizley/jwt": "^2.0"
+            "bizley/jwt": "^2.1"
         }
     }
 
-and run `composer update` or alternatively run `composer require bizley/jwt:^2.0`
+and run `composer update` or alternatively run `composer require bizley/jwt:^2.1`
 
 ## Basic usage
 
@@ -64,7 +66,7 @@ For other configuration options refer to the [Yii 2 Guide](https://www.yiiframew
 
 ### JWT Basic Usage
 
-Please refer to the [lcobucci/jwt Documentation](https://github.com/lcobucci/jwt/blob/3.2/README.md).
+Please refer to the [lcobucci/jwt Documentation](https://lcobucci-jwt.readthedocs.io/en/3.4.0/).
 
 ## JSON Web Tokens
 
