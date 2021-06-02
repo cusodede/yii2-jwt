@@ -164,7 +164,7 @@ class Jwt extends Component
 	 */
 	private function initConfiguration(): void
 	{
-		$algorithm = $this->algorithmTypes[$this->signer->algorithmId()] ?? null;
+		$algorithm = $this->algorithmTypes[get_class($this->signer)] ?? null;
 
 		if ($algorithm === self::ALGORITHM_TYPE_SYMMETRIC) {
 			$this->_configuration = Configuration::forSymmetricSigner(
