@@ -109,7 +109,8 @@ class Jwt extends Component
 			$this->_configuration = Configuration::forUnsecuredSigner($this->encoder, $this->decoder);
 		} else {
 			$this->initSigner();
-			$this->initKeys();
+			$this->initKey($this->signerKey);
+			$this->initKey($this->verifyKey);
 
 			$this->initConfiguration();
 		}
@@ -208,26 +209,25 @@ class Jwt extends Component
 	}
 
 	/**
+	 * @param mixed $key
 	 * @throws InvalidConfigException
 	 */
-	private function initKeys(): void
+	private function initKey(&$key): void
 	{
-		foreach ([$this->signerKey, $this->verifyKey] as &$key) {
-			if ('' === $key) {
-				continue;
-			}
+		if ('' === $key) {
+			return;
+		}
 
-			if (is_string($key)) {
-				if (strpos($key, '@') === 0) {
-					$key = LocalFileReference::file(Yii::getAlias($key));
-				} elseif (strpos($key, 'file://') === 0) {
-					$key = LocalFileReference::file($key);
-				} else {
-					$key = InMemory::plainText($key);
-				}
+		if (is_string($key)) {
+			if (strpos($key, '@') === 0) {
+				$key = LocalFileReference::file(Yii::getAlias($key));
+			} elseif (strpos($key, 'file://') === 0) {
+				$key = LocalFileReference::file($key);
 			} else {
-				$key = Instance::ensure($key, Key::class);
+				$key = InMemory::plainText($key);
 			}
+		} else {
+			$key = Instance::ensure($key, Key::class);
 		}
 	}
 
