@@ -31,6 +31,7 @@ use yii\di\Instance;
  * @see https://github.com/lcobucci/jwt
  *
  * @property-read Parser $parser
+ * @property-read Configuration $configuration
  */
 class Jwt extends Component
 {
@@ -123,6 +124,14 @@ class Jwt extends Component
 	public function parse(string $jwt): UnencryptedToken
 	{
 		return $this->parser->parse($jwt);
+	}
+
+	/**
+	 * @return Configuration
+	 */
+	public function getConfiguration(): Configuration
+	{
+		return $this->_configuration;
 	}
 
 	/**
