@@ -245,12 +245,10 @@ class Jwt extends Component
 	 */
 	private function configureConstraints(): void
 	{
-		if ([] === $this->validationConstraints) {
-			$this->validationConstraints[] = new SignedWith(
-				$this->_configuration->signer(),
-				$this->_configuration->verificationKey()
-			);
-		}
+		$this->validationConstraints[] = new SignedWith(
+			$this->_configuration->signer(),
+			$this->_configuration->verificationKey()
+		);
 
 		$constraints = array_map(
 			static function ($constraint) {
