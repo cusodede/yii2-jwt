@@ -1,7 +1,7 @@
 <?php
 declare(strict_types = 1);
 
-namespace bizley\jwt;
+namespace cusodede\jwt;
 
 use Closure;
 use Lcobucci\JWT\UnencryptedToken;
