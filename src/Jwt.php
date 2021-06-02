@@ -193,11 +193,10 @@ class Jwt extends Component
 	 */
 	private function initSigner(): void
 	{
-		$this->signer = Instance::ensure($this->signer, Signer::class);
+		//применимо только для Ecdsa
+		Yii::$container->set(SignatureConverter::class, MultibyteStringConverter::class);
 
-		if ($this->signer instanceof Ecdsa) {
-			Yii::$container->set(SignatureConverter::class, MultibyteStringConverter::class);
-		}
+		$this->signer = Instance::ensure($this->signer, Signer::class);
 	}
 
 	/**
