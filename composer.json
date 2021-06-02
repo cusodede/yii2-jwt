@@ -1,6 +1,6 @@
 {
 	"name": "cusodede/yii2-jwt",
-	"homepage": "https://github.com/cusodede/yii2-multi-select-widget",
+	"homepage": "https://github.com/cusodede/yii2-jwt",
 	"description": "JWT integration for Yii 2",
 	"type": "yii2-extension",
 	"keywords": [
