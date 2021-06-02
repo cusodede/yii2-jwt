@@ -1,47 +1,42 @@
 {
-  "name": "bizley/jwt",
-  "description": "JWT integration for Yii 2",
-  "type": "yii2-extension",
-  "keywords": ["yii2", "jwt", "jws", "token", "authentication"],
-  "license": "Apache-2.0",
-  "authors": [
-    {
-      "name": "Paweł Bizley Brzozowski",
-      "email": "pawel@positive.codes"
-    },
-    {
-      "name": "Dmitriy Demin",
-      "email": "sizemail@gmail.com"
-    }
-  ],
-  "support": {
-    "source": "https://github.com/bizley/yii2-jwt"
-  },
-  "require": {
-    "php": ">=7.4",
-    "lcobucci/jwt": "^4.0",
-    "yiisoft/yii2": ">=2.0.14 <2.1"
-  },
-  "require-dev": {
-    "infection/infection": "*",
-    "phpstan/phpstan": "*",
-    "phpunit/phpunit": "^9.3",
-    "roave/security-advisories": "dev-master"
-  },
-  "autoload": {
-    "psr-4": {
-      "bizley\\jwt\\": "src/"
-    }
-  },
-  "autoload-dev": {
-    "psr-4": {
-      "bizley\\tests\\": "tests/"
-    }
-  },
-  "repositories": [
-    {
-      "type": "composer",
-      "url": "https://asset-packagist.org"
-    }
-  ]
+	"name": "cusodede/yii2-jwt",
+	"homepage": "https://github.com/cusodede/yii2-multi-select-widget",
+	"description": "JWT integration for Yii 2",
+	"type": "yii2-extension",
+	"keywords": [
+		"yii2",
+		"jwt",
+		"jws",
+		"token",
+		"authentication"
+	],
+	"license": "Apache-2.0",
+	"authors": [
+		{
+			"name": "Paweł Bizley Brzozowski",
+			"email": "pawel@positive.codes"
+		},
+		{
+			"name": "Dmitriy Demin",
+			"email": "sizemail@gmail.com"
+		}
+	],
+	"require": {
+		"php": "~7.4|~8.0",
+		"lcobucci/jwt": "^4.0"
+	},
+	"require-dev": {
+		"yiisoft/yii2": "dev-master"
+	},
+	"autoload": {
+		"psr-4": {
+			"cusodede\\jwt\\": "src/"
+		}
+	},
+	"repositories": [
+		{
+			"type": "composer",
+			"url": "https://asset-packagist.org"
+		}
+	]
 }
