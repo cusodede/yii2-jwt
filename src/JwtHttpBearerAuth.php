@@ -1,160 +1,141 @@
 <?php
-
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace bizley\jwt;
 
 use Closure;
-use Lcobucci\JWT\Token;
+use Lcobucci\JWT\UnencryptedToken;
 use Throwable;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\di\Instance;
 use yii\filters\auth\HttpBearerAuth;
 use yii\web\IdentityInterface;
-use yii\web\Request;
 use yii\web\Response;
 use yii\web\UnauthorizedHttpException;
 use yii\web\User;
 
-use function call_user_func;
-use function get_class;
-
 /**
- * JwtHttpBearerAuth is an action filter that supports the authentication method based on HTTP Bearer JSON Web Token.
- *
- * You may use JwtHttpBearerAuth by attaching it as a behavior to a controller or module, like the following:
- *
- * ```php
- * public function behaviors()
- * {
- *     return [
- *         'JWTBearerAuth' => [
- *             'class' => \bizley\jwt\JwtHttpBearerAuth::class,
- *         ],
- *     ];
- * }
- * ```
- *
- * @author Paweł Bizley Brzozowski <pawel@positive.codes> since 2.0 (fork)
- * @author Dmitriy Demin <sizemail@gmail.com> original package
+ * Class JwtHttpBearerAuth
+ * ActionFilter, реализующий аутентификацию через Json Web Token.
+ * @see https://jwt.io/
  */
 class JwtHttpBearerAuth extends HttpBearerAuth
 {
-    /**
-     * @var string|array<string, mixed>|Jwt application component ID of the JWT handler, configuration array, or JWT handler object
-     * itself. By default it's assumes that component of ID "jwt" has been configured.
-     */
+	/**
+	 * @var string|array|Jwt id компонента, его конфигурация или сам объект компонента.
+	 */
     public $jwt = 'jwt';
+	/**
+	 * @var string токен (payload-параметр), использующийся для идентификации пользователя в системе.
+	 * По умолчанию - jti (JWT ID).
+	 */
+	public string $identifyClaim = 'jti';
+	/**
+	 * @var Closure|null анонимная функция, возвращающая пользовательскую конфигарацию компонента jwt.
+	 * Если конфигурация не задана, компонент будет использовать настройки по умолчанию.
+	 */
+    public ?Closure $jwtOptionsCallback = null;
 
     /**
-     * @var Closure|null anonymous function that should return identity of user authenticated with the JWT payload
-     * information. It should have the following signature:
-     *
-     * ```php
-     * function (Token $token)
-     * ```
-     *
-     * where $token is JSON Web Token provided in the HTTP header.
-     * If $auth is not provided method User::loginByAccessToken() will be called instead.
-     */
-    public ?Closure $auth = null;
-
-    /**
+	 * {@inheritdoc}
      * @throws InvalidConfigException
      */
     public function init(): void
     {
         parent::init();
 
+        $this->jwt = Instance::ensure($this->jwt, Jwt::class);
+        
         if (empty($this->pattern)) {
             throw new InvalidConfigException('You must provide pattern to use to extract the HTTP authentication value!');
         }
     }
 
-    private ?Jwt $JWTComponent = null;
-
-    public function getJwtComponent(): Jwt
+	/**
+	 * {@inheritdoc}
+	 */
+    public function authenticate($user, $request, $response): ?IdentityInterface
     {
-        if ($this->JWTComponent === null) {
-            /** @var Jwt $jwt */
-            $jwt = Instance::ensure($this->jwt, Jwt::class);
-            $this->JWTComponent = $jwt;
-        }
-
-        return $this->JWTComponent;
-    }
-
-    /**
-     * Authenticates the current user.
-     * @param User $user
-     * @param Request $request
-     * @param Response $response
-     * @return IdentityInterface|null the authenticated user identity. If authentication information is not provided, null will be returned.
-     * @throws UnauthorizedHttpException if authentication information is provided but is invalid.
-     */
-    public function authenticate($user, $request, $response): ?IdentityInterface // BC signature
-    {
-        /** @var string|null $authHeader */
         $authHeader = $request->getHeaders()->get($this->header);
 
-        if ($authHeader === null || !preg_match($this->pattern, $authHeader, $matches)) {
+        if ((null === $authHeader) || !preg_match($this->pattern, $authHeader, $matches)) {
             return null;
         }
 
-        $identity = null;
-        $token = null;
-
         try {
-            $token = $this->processToken($matches[1]);
-        } catch (Throwable $exception) {
-            Yii::warning($exception->getMessage(), 'JwtHttpBearerAuth');
-            $this->fail($response);
+            $token = $this->jwt->parse($matches[1]);
+        } catch (Throwable $e) {
+			$token = null;
+            $this->fail($response, $e);
         }
 
-        if ($token !== null) {
-            if ($this->auth instanceof Closure) {
-                $identity = call_user_func($this->auth, $token);
-            } else {
-                $identity = $user->loginByAccessToken($token->toString(), get_class($this));
-            }
-        }
+		$identity = $this->getIdentity($token, $user);
+		if (null === $identity) {
+			$this->fail($response);
+		}
 
-        if ($identity === null) {
-            $this->fail($response);
-        }
+		try {
+			$this->configureUserOptions($identity);
+
+			$validateIsOk = $this->jwt->validate($token);
+		} catch (Throwable $e) {
+			$validateIsOk = false;
+			$this->fail($response, $e);
+		}
+
+		if (!$validateIsOk || !$user->login($identity)) {
+			$this->fail($response);
+		}
 
         return $identity;
     }
 
-    /**
-     * Parses and validates the JWT token.
-     * @param string $data data provided in HTTP header, presumably JWT
-     * @throws InvalidConfigException
-     */
-    public function processToken(string $data): ?Token
-    {
-        $token = $this->getJwtComponent()->parse($data);
+	/**
+	 * @param UnencryptedToken $token
+	 * @param User $user
+	 * @return IdentityInterface|null
+	 */
+    private function getIdentity(UnencryptedToken $token, User $user): ?IdentityInterface
+	{
+		$identifyClaim = $token->claims()->get($this->identifyClaim);
+		if (null === $identifyClaim) {
+			return null;
+		}
 
-        return $this->getJwtComponent()->validate($token) ? $token : null;
-    }
+		/** @var IdentityInterface $class */
+		$class = $user->identityClass;
 
-    /**
-     * @throws UnauthorizedHttpException
-     */
-    public function fail(Response $response): void
+		return $class::findIdentityByAccessToken($identifyClaim, static::class);
+	}
+
+	/**
+	 * @param IdentityInterface $user
+	 * @throws InvalidConfigException
+	 */
+	private function configureUserOptions(IdentityInterface $user): void
+	{
+		if (null !== $this->jwtOptionsCallback) {
+			$userOptions = call_user_func($this->jwtOptionsCallback, $user);
+			if (is_array($userOptions) && ([] !== $userOptions)) {
+				Yii::configure($this->jwt, $userOptions);
+				$this->jwt->init();
+			}
+		}
+	}
+
+	/**
+	 * @param Response $response
+	 * @param Throwable|null $e
+	 * @throws UnauthorizedHttpException
+	 */
+    private function fail(Response $response, ?Throwable $e = null): void
     {
+    	if (null !== $e) {
+			Yii::error($e, static::class);
+		}
+
         $this->challenge($response);
         $this->handleFailure($response);
-    }
-
-    /**
-     * Handles authentication failure.
-     * @param Response $response
-     * @throws UnauthorizedHttpException
-     */
-    public function handleFailure($response): void // BC signature
-    {
-        throw new UnauthorizedHttpException('Your request was made with invalid or expired JSON Web Token.');
     }
 }
