@@ -3,6 +3,8 @@ declare(strict_types = 1);
 
 namespace cusodede\jwt;
 
+use Lcobucci\Clock\Clock;
+use Lcobucci\Clock\SystemClock;
 use Lcobucci\JWT\Builder;
 use Lcobucci\JWT\ClaimsFormatter;
 use Lcobucci\JWT\Configuration;
@@ -114,6 +116,8 @@ class Jwt extends Component
 
 			$this->initConfiguration();
 		}
+
+		Yii::$container->set(Clock::class, static fn() => SystemClock::fromSystemTimezone());
 	}
 
 	/**
