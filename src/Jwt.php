@@ -21,7 +21,6 @@ use Lcobucci\JWT\Signer\Key\LocalFileReference;
 use Lcobucci\JWT\Token;
 use Lcobucci\JWT\UnencryptedToken;
 use Lcobucci\JWT\Validation\Constraint;
-use Lcobucci\JWT\Validation\Constraint\SignedWith;
 use Yii;
 use yii\base\Component;
 use yii\base\InvalidConfigException;
@@ -89,7 +88,6 @@ class Jwt extends Component
 	/**
 	 * @var array|Constraint[] список валидаторов для проверки токена.
 	 * Требуется задать, как минимум, один валидатор.
-	 * Также, при конфигурации массив будт дополняться "must have" валидаторами.
 	 * @see configureConstraints()
 	 */
 	public array $validationConstraints = [];
@@ -248,11 +246,6 @@ class Jwt extends Component
 	 */
 	private function configureConstraints(): void
 	{
-		$this->validationConstraints[] = new SignedWith(
-			$this->_configuration->signer(),
-			$this->_configuration->verificationKey()
-		);
-
 		$constraints = array_map(
 			static function ($constraint) {
 				return Instance::ensure($constraint, Constraint::class);
