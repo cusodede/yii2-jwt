@@ -104,6 +104,8 @@ class Jwt extends Component
 	{
 		parent::init();
 
+		Yii::$container->set(Clock::class, static fn() => SystemClock::fromSystemTimezone());
+
 		$this->initEncoders();
 		if ($this->signer === null) {
 			$this->_configuration = Configuration::forUnsecuredSigner($this->encoder, $this->decoder);
@@ -114,8 +116,6 @@ class Jwt extends Component
 
 			$this->initConfiguration();
 		}
-
-		Yii::$container->set(Clock::class, static fn() => SystemClock::fromSystemTimezone());
 	}
 
 	/**
