@@ -27,12 +27,12 @@ class JwtHttpBearerAuth extends HttpBearerAuth
      */
     public $jwt = 'jwt';
     /**
-     * @var string токен (payload-параметр), использующийся для идентификации пользователя в системе.
+     * @var string Токен (payload-параметр), использующийся для идентификации пользователя в системе.
      * По умолчанию - jti (JWT ID).
      */
     public string $identifyClaim = 'jti';
     /**
-     * @var Closure|null анонимная функция, возвращающая пользовательскую конфигарацию компонента jwt.
+     * @var Closure|null Анонимная функция, возвращающая пользовательскую конфигурацию компонента jwt.
      * Если конфигурация не задана, компонент будет использовать настройки по умолчанию.
      */
     public ?Closure $jwtOptionsCallback = null;
