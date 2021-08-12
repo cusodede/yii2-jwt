@@ -63,11 +63,13 @@ class Jwt extends Component
         self::ES512 => self::ALGORITHM_TYPE_ASYMMETRIC,
     ];
 
+    public const DEFAULT_SIGNER =self::HS256;
+
     /**
      * @var string|array|Signer|null конфигурация компонента подписи.
      * Если задано `null` значение, то будет использована unsecured конфигурация.
      */
-    public $signer = self::HS256;
+    public $signer = self::DEFAULT_SIGNER;
     /**
      * @var string|array|Key конфигурация ключа подписи.
      */
@@ -107,7 +109,7 @@ class Jwt extends Component
         Yii::$container->set(Clock::class, static fn() => SystemClock::fromSystemTimezone());
 
         $this->initEncoders();
-        if ($this->signer === null) {
+        if (null === $this->signer) {
             $this->_configuration = Configuration::forUnsecuredSigner($this->encoder, $this->decoder);
         } else {
             $this->initSigner();
@@ -174,7 +176,7 @@ class Jwt extends Component
      */
     private function initConfiguration():void
     {
-        $algorithm = $this->algorithmTypes[get_class($this->signer)]??null;
+        $algorithm = $this->algorithmTypes[get_class($this->signer??self::DEFAULT_SIGNER)]??null;
 
         if ($algorithm === self::ALGORITHM_TYPE_SYMMETRIC) {
             $this->_configuration = Configuration::forSymmetricSigner(
@@ -229,9 +231,9 @@ class Jwt extends Component
         }
 
         if (is_string($key)) {
-            if (strpos($key, '@') === 0) {
+            if (0 === strncmp($key, '@', 1)) {
                 $key = LocalFileReference::file(Yii::getAlias($key));
-            } elseif (strpos($key, 'file://') === 0) {
+            } elseif (0 === strncmp($key, 'file://', 7)) {
                 $key = LocalFileReference::file($key);
             } else {
                 $key = InMemory::plainText($key);
