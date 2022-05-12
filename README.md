@@ -219,3 +219,5 @@ Please refer to the [lcobucci/jwt Documentation](https://lcobucci-jwt.readthedoc
 ## JSON Web Tokens
 
 - https://jwt.io
+
+## tag 3.0.1+cusodede
