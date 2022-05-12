@@ -220,4 +220,4 @@ Please refer to the [lcobucci/jwt Documentation](https://lcobucci-jwt.readthedoc
 
 - https://jwt.io
 
-## tag 3.0.1-cusodede.1
+## tag 3.0.1.1
