@@ -175,6 +175,14 @@ class SignerTest extends TestCase
             ],
             Jwt::ES512
         ];
+        yield 'OpenSSL3 ES256' => [
+            [
+                'signer' => Jwt::ES256,
+                'signingKey' => '@bizley/tests/data/es256.openssl3.private.pem',
+                'verifyingKey' => '@bizley/tests/data/es256.openssl3.public.pem',
+            ],
+            Jwt::ES256
+        ];
     }
 
     #[Attributes\DataProvider('providerForSigners')]
