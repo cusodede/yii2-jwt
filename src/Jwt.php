@@ -1,5 +1,5 @@
 <?php
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace cusodede\jwt;
 
@@ -13,11 +13,8 @@ use Lcobucci\JWT\Encoder;
 use Lcobucci\JWT\Encoding\JoseEncoder;
 use Lcobucci\JWT\Parser;
 use Lcobucci\JWT\Signer;
-use Lcobucci\JWT\Signer\Ecdsa\MultibyteStringConverter;
-use Lcobucci\JWT\Signer\Ecdsa\SignatureConverter;
 use Lcobucci\JWT\Signer\Key;
 use Lcobucci\JWT\Signer\Key\InMemory;
-use Lcobucci\JWT\Signer\Key\LocalFileReference;
 use Lcobucci\JWT\Token;
 use Lcobucci\JWT\UnencryptedToken;
 use Lcobucci\JWT\Validation\Constraint;
@@ -27,7 +24,7 @@ use yii\base\InvalidConfigException;
 use yii\di\Instance;
 
 /**
- * JSON Web Token implementation based on lcobucci/jwt library v4.
+ * JSON Web Token implementation based on lcobucci/jwt library v5.
  * @see https://github.com/lcobucci/jwt
  *
  * @property-read Parser $parser
@@ -63,11 +60,10 @@ class Jwt extends Component
         self::ES512 => self::ALGORITHM_TYPE_ASYMMETRIC,
     ];
 
-    public const DEFAULT_SIGNER =self::HS256;
+    public const DEFAULT_SIGNER = self::HS256;
 
     /**
-     * @var string|array|Signer|null конфигурация компонента подписи.
-     * Если задано `null` значение, то будет использована unsecured конфигурация.
+     * @var string|array|Signer конфигурация компонента подписи.
      */
     public $signer = self::DEFAULT_SIGNER;
     /**
@@ -102,7 +98,7 @@ class Jwt extends Component
     /**
      * @throws InvalidConfigException
      */
-    public function init():void
+    public function init(): void
     {
         parent::init();
 
@@ -110,7 +106,7 @@ class Jwt extends Component
 
         $this->initEncoders();
         if (null === $this->signer) {
-            $this->_configuration = Configuration::forUnsecuredSigner($this->encoder, $this->decoder);
+            throw new InvalidConfigException('Empty signer');
         } else {
             $this->initSigner();
             $this->initKey($this->signerKey);
@@ -122,9 +118,10 @@ class Jwt extends Component
 
     /**
      * @param string $jwt
+     *
      * @return UnencryptedToken
      */
-    public function parse(string $jwt):UnencryptedToken
+    public function parse(string $jwt): UnencryptedToken
     {
         return $this->parser->parse($jwt);
     }
@@ -132,16 +129,17 @@ class Jwt extends Component
     /**
      * @return Configuration
      */
-    public function getConfiguration():Configuration
+    public function getConfiguration(): Configuration
     {
         return $this->_configuration;
     }
 
     /**
      * @param ClaimsFormatter|null $claimFormatter
+     *
      * @return Builder
      */
-    public function getBuilder(?ClaimsFormatter $claimFormatter = null):Builder
+    public function getBuilder(?ClaimsFormatter $claimFormatter = null): Builder
     {
         return $this->_configuration->builder($claimFormatter);
     }
@@ -149,7 +147,7 @@ class Jwt extends Component
     /**
      * @return Parser
      */
-    public function getParser():Parser
+    public function getParser(): Parser
     {
         return $this->_configuration->parser();
     }
@@ -157,16 +155,17 @@ class Jwt extends Component
     /**
      * @param Token $token
      */
-    public function assert(Token $token):void
+    public function assert(Token $token): void
     {
         $this->_configuration->validator()->assert($token, ...$this->_configuration->validationConstraints());
     }
 
     /**
      * @param Token $token
+     *
      * @return bool
      */
-    public function validate(Token $token):bool
+    public function validate(Token $token): bool
     {
         return $this->_configuration->validator()->validate($token, ...$this->_configuration->validationConstraints());
     }
@@ -174,9 +173,9 @@ class Jwt extends Component
     /**
      * @throws InvalidConfigException
      */
-    private function initConfiguration():void
+    private function initConfiguration(): void
     {
-        $algorithm = $this->algorithmTypes[get_class($this->signer??self::DEFAULT_SIGNER)]??null;
+        $algorithm = $this->algorithmTypes[get_class($this->signer ?? self::DEFAULT_SIGNER)] ?? null;
 
         if ($algorithm === self::ALGORITHM_TYPE_SYMMETRIC) {
             $this->_configuration = Configuration::forSymmetricSigner(
@@ -203,18 +202,15 @@ class Jwt extends Component
     /**
      * @throws InvalidConfigException
      */
-    private function initSigner():void
+    private function initSigner(): void
     {
-        //применимо только для Ecdsa
-        Yii::$container->set(SignatureConverter::class, MultibyteStringConverter::class);
-
         $this->signer = Instance::ensure($this->signer, Signer::class);
     }
 
     /**
      * @throws InvalidConfigException
      */
-    private function initEncoders():void
+    private function initEncoders(): void
     {
         $this->encoder = Instance::ensure($this->encoder, Encoder::class);
         $this->decoder = Instance::ensure($this->decoder, Encoder::class);
@@ -222,9 +218,10 @@ class Jwt extends Component
 
     /**
      * @param mixed $key
+     *
      * @throws InvalidConfigException
      */
-    private function initKey(&$key):void
+    private function initKey(&$key): void
     {
         if ('' === $key) {
             return;
@@ -232,9 +229,9 @@ class Jwt extends Component
 
         if (is_string($key)) {
             if (0 === strncmp($key, '@', 1)) {
-                $key = LocalFileReference::file(Yii::getAlias($key));
+                $key = InMemory::file(Yii::getAlias($key));
             } elseif (0 === strncmp($key, 'file://', 7)) {
-                $key = LocalFileReference::file($key);
+                $key = InMemory::file($key);
             } else {
                 $key = InMemory::plainText($key);
             }
@@ -246,16 +243,13 @@ class Jwt extends Component
     /**
      * @throws InvalidConfigException
      */
-    private function configureConstraints():void
+    private function configureConstraints(): void
     {
         $constraints = array_map(
-            static function($constraint)
-            {
-                return Instance::ensure($constraint, Constraint::class);
-            },
+            static fn($constraint) => Instance::ensure($constraint, Constraint::class),
             $this->validationConstraints
         );
 
-        $this->_configuration->setValidationConstraints(...$constraints);
+        $this->_configuration = $this->_configuration->withValidationConstraints(...$constraints);
     }
 }

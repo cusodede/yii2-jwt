@@ -1,5 +1,5 @@
 <?php
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace cusodede\jwt;
 
@@ -16,7 +16,6 @@ use yii\web\UnauthorizedHttpException;
 use yii\web\User;
 
 /**
- * Class JwtHttpBearerAuth
  * ActionFilter, реализующий аутентификацию через Json Web Token.
  * @see https://jwt.io/
  */
@@ -41,25 +40,25 @@ class JwtHttpBearerAuth extends HttpBearerAuth
      * {@inheritdoc}
      * @throws InvalidConfigException
      */
-    public function init():void
+    public function init(): void
     {
         parent::init();
-
-        $this->jwt = Instance::ensure($this->jwt, Jwt::class);
 
         if (empty($this->pattern)) {
             throw new InvalidConfigException('You must provide pattern to use to extract the HTTP authentication value!');
         }
+
+        $this->jwt = Instance::ensure($this->jwt, Jwt::class);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function authenticate($user, $request, $response):?IdentityInterface
+    public function authenticate($user, $request, $response): ?IdentityInterface
     {
         $authHeader = $request->getHeaders()->get($this->header);
 
-        if ((null === $authHeader) || !preg_match($this->pattern, $authHeader, $matches)) {
+        if ((null === $authHeader) || ! preg_match($this->pattern, $authHeader, $matches)) {
             return null;
         }
 
@@ -84,7 +83,7 @@ class JwtHttpBearerAuth extends HttpBearerAuth
             $this->fail($response, $e);
         }
 
-        if (!$validateIsOk || !$user->login($identity)) {
+        if (! $validateIsOk || ! $user->login($identity)) {
             $this->fail($response);
         }
 
@@ -94,9 +93,10 @@ class JwtHttpBearerAuth extends HttpBearerAuth
     /**
      * @param UnencryptedToken $token
      * @param User $user
+     *
      * @return IdentityInterface|null
      */
-    private function getIdentity(UnencryptedToken $token, User $user):?IdentityInterface
+    private function getIdentity(UnencryptedToken $token, User $user): ?IdentityInterface
     {
         $identifyClaim = $token->claims()->get($this->identifyClaim);
         if (null === $identifyClaim) {
@@ -111,13 +111,16 @@ class JwtHttpBearerAuth extends HttpBearerAuth
 
     /**
      * @param IdentityInterface $user
+     *
      * @throws InvalidConfigException
      */
-    private function configureUserOptions(IdentityInterface $user):void
+    private function configureUserOptions(IdentityInterface $user): void
     {
-        if (null !== $this->jwtOptionsCallback) {
+        if ($this->jwtOptionsCallback) {
+
             $userOptions = call_user_func($this->jwtOptionsCallback, $user);
-            if (is_array($userOptions) && ([] !== $userOptions)) {
+
+            if (is_array($userOptions) && $userOptions) {
                 Yii::configure($this->jwt, $userOptions);
                 $this->jwt->init();
             }
@@ -127,11 +130,12 @@ class JwtHttpBearerAuth extends HttpBearerAuth
     /**
      * @param Response $response
      * @param Throwable|null $e
+     *
      * @throws UnauthorizedHttpException
      */
-    private function fail(Response $response, ?Throwable $e = null):void
+    private function fail(Response $response, ?Throwable $e = null): void
     {
-        if (null !== $e) {
+        if ($e) {
             Yii::error($e, static::class);
         }
 
